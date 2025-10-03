@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entity Relationship Visualizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Include D3.js from CDN -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Entity Relationship Visualizer</h1>
+            <p>Explore entities and relationships in free-form text using Wikidata knowledge graph</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Text Input -->
+            <div class="left-panel">
+                <div class="input-section">
+                    <h2>Text Input</h2>
+                    <textarea 
+                        id="textInput" 
+                        placeholder="Enter your text here to analyze entities and relationships...
+
+Example:
+Charles Dillon 'Casey' Stengel was an American professional baseball player and manager in Major League Baseball. He played for the New York Yankees and New York Mets."
+                        rows="15"
+                    ></textarea>
+                    
+                    <div class="button-container">
+                        <button id="analyzeBtn" class="analyze-btn">
+                            <span class="btn-text">Analyze Text</span>
+                            <span class="btn-loading" style="display: none;">Analyzing...</span>
+                        </button>
+                        <button id="clearBtn" class="clear-btn">Clear</button>
+                    </div>
+                </div>
+
+                <!-- Results Summary -->
+                <div class="results-summary" id="resultsSummary" style="display: none;">
+                    <h3>Analysis Results</h3>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <span class="stat-label">Relationships Found:</span>
+                            <span class="stat-value" id="relationshipCount">0</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Processing Time:</span>
+                            <span class="stat-value" id="processingTime">0ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Visualization -->
+            <div class="right-panel">
+                <div class="visualization-section">
+                    <div class="visualization-header">
+                        <h2>Entity Relationship Graph</h2>
+                        <div class="visualization-controls">
+                            <button id="resetViewBtn" class="control-btn">Reset View</button>
+                            <button id="zoomInBtn" class="control-btn">Zoom In</button>
+                            <button id="zoomOutBtn" class="control-btn">Zoom Out</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Loading indicator -->
+                    <div class="loading-container" id="loadingContainer" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <p>Analyzing text and building graph...</p>
+                    </div>
+
+                    <!-- Error message -->
+                    <div class="error-container" id="errorContainer" style="display: none;">
+                        <div class="error-message">
+                            <h3>Analysis Error</h3>
+                            <p id="errorText">An error occurred during analysis.</p>
+                        </div>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">📊</div>
+                        <h3>No Graph Yet</h3>
+                        <p>Enter some text and click "Analyze Text" to see the entity relationship graph.</p>
+                    </div>
+
+                    <!-- Graph container -->
+                    <div class="graph-container" id="graphContainer" style="display: none;">
+                        <svg id="graphSvg"></svg>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Powered by spaCy, Wikidata, and D3.js | Built for CSE 490A2</p>
+        </footer>
+    </div>
+
+    <!-- Include JavaScript files -->
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script src="{{ url_for('static', filename='graph.js') }}"></script>
+</body>
+</html>

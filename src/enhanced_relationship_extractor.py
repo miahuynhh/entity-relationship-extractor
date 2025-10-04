@@ -75,10 +75,12 @@ class EnhancedRelationshipExtractor:
                         relationship = {
                             'subject': subject['wikidata_label'],
                             'subject_qid': subject['qid'],
+                            'subject_type': subject.get('label', 'UNKNOWN'),
                             'predicate': shortest_rel['predicate'],
                             'predicate_pid': shortest_rel['predicate_pid'],
                             'object': object_entity['wikidata_label'],
-                            'object_qid': object_entity['qid']
+                            'object_qid': object_entity['qid'],
+                            'object_type': object_entity.get('label', 'UNKNOWN')
                         }
                         relationships.append(relationship)
                         print(f"  Found: {relationship['subject']} --[{relationship['predicate']}]--> {relationship['object']}")
@@ -90,10 +92,12 @@ class EnhancedRelationshipExtractor:
                         relationship = {
                             'subject': object_entity['wikidata_label'],
                             'subject_qid': object_entity['qid'],
+                            'subject_type': object_entity.get('label', 'UNKNOWN'),
                             'predicate': shortest_rel['predicate'],
                             'predicate_pid': shortest_rel['predicate_pid'],
                             'object': subject['wikidata_label'],
-                            'object_qid': subject['qid']
+                            'object_qid': subject['qid'],
+                            'object_type': subject.get('label', 'UNKNOWN')
                         }
                         relationships.append(relationship)
                         print(f"  Found: {relationship['subject']} --[{relationship['predicate']}]--> {relationship['object']}")

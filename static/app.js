@@ -24,7 +24,14 @@ const elements = {
     graphContainer: null,
     errorText: null,
     btnText: null,
-    btnLoading: null
+    btnLoading: null,
+    filterControls: null,
+    entityTypeFilters: null,
+    relationshipTypeFilters: null,
+    showAllBtn: null,
+    hideAllBtn: null,
+    visibleCount: null,
+    totalCount: null
 };
 
 // Initialize the application when DOM is loaded
@@ -52,6 +59,15 @@ function initializeElements() {
     elements.errorText = document.getElementById('errorText');
     elements.btnText = elements.analyzeBtn.querySelector('.btn-text');
     elements.btnLoading = elements.analyzeBtn.querySelector('.btn-loading');
+    
+    // Filter elements
+    elements.filterControls = document.getElementById('filterControls');
+    elements.entityTypeFilters = document.getElementById('entityTypeFilters');
+    elements.relationshipTypeFilters = document.getElementById('relationshipTypeFilters');
+    elements.showAllBtn = document.getElementById('showAllBtn');
+    elements.hideAllBtn = document.getElementById('hideAllBtn');
+    elements.visibleCount = document.getElementById('visibleCount');
+    elements.totalCount = document.getElementById('totalCount');
     
     console.log('DOM elements initialized');
 }
@@ -127,6 +143,9 @@ async function handleAnalyzeClick() {
             window.initializeGraph(data.relationships);
         }
         
+        // Setup filter controls
+        setupFilters(data.relationships);
+        
         AppState.currentData = data;
         
     } catch (error) {
@@ -157,6 +176,11 @@ function handleClearClick() {
     hideResultsSummary();
     hideGraphContainer();
     showEmptyState();
+    
+    // Hide filter controls
+    if (elements.filterControls) {
+        elements.filterControls.style.display = 'none';
+    }
     
     // Clear graph if it exists
     if (window.clearGraph) {
@@ -294,6 +318,172 @@ function updateResultsSummary(data, processingTime) {
 function logAppState() {
     console.log('App State:', AppState);
     console.log('Current Data:', AppState.currentData);
+}
+
+/**
+ * Setup filter controls and populate with data
+ * @param {Array} relationships - Array of relationship objects
+ */
+function setupFilters(relationships) {
+    if (!relationships || relationships.length === 0) {
+        elements.filterControls.style.display = 'none';
+        return;
+    }
+    
+    // Show filter controls
+    elements.filterControls.style.display = 'block';
+    
+    // Extract unique entity types and relationship types
+    const entityTypes = new Set();
+    const relationshipTypes = new Set();
+    
+    relationships.forEach(rel => {
+        if (rel.subject_type) entityTypes.add(rel.subject_type);
+        if (rel.object_type) entityTypes.add(rel.object_type);
+        if (rel.predicate) relationshipTypes.add(rel.predicate);
+    });
+    
+    // Populate entity type filters
+    populateEntityTypeFilters(Array.from(entityTypes));
+    
+    // Populate relationship type filters
+    populateRelationshipTypeFilters(Array.from(relationshipTypes));
+    
+    // Setup filter event listeners
+    setupFilterEventListeners();
+    
+    // Update counts
+    updateFilterCounts();
+}
+
+/**
+ * Populate entity type filter checkboxes
+ * @param {Array} entityTypes - Array of entity types
+ */
+function populateEntityTypeFilters(entityTypes) {
+    elements.entityTypeFilters.innerHTML = '';
+    
+    entityTypes.forEach(type => {
+        const checkbox = document.createElement('div');
+        checkbox.className = 'filter-checkbox checked';
+        checkbox.innerHTML = `
+            <input type="checkbox" id="entity-${type}" checked>
+            <label for="entity-${type}">${type}</label>
+        `;
+        elements.entityTypeFilters.appendChild(checkbox);
+    });
+}
+
+/**
+ * Populate relationship type filter checkboxes
+ * @param {Array} relationshipTypes - Array of relationship types
+ */
+function populateRelationshipTypeFilters(relationshipTypes) {
+    elements.relationshipTypeFilters.innerHTML = '';
+    
+    relationshipTypes.forEach(type => {
+        const checkbox = document.createElement('div');
+        checkbox.className = 'filter-checkbox checked';
+        checkbox.innerHTML = `
+            <input type="checkbox" id="rel-${type.replace(/\s+/g, '-')}" checked>
+            <label for="rel-${type.replace(/\s+/g, '-')}">${type}</label>
+        `;
+        elements.relationshipTypeFilters.appendChild(checkbox);
+    });
+}
+
+/**
+ * Setup filter event listeners
+ */
+function setupFilterEventListeners() {
+    // Entity type filter checkboxes
+    elements.entityTypeFilters.addEventListener('change', handleFilterChange);
+    
+    // Relationship type filter checkboxes
+    elements.relationshipTypeFilters.addEventListener('change', handleFilterChange);
+    
+    // Show all button
+    elements.showAllBtn.addEventListener('click', () => {
+        setAllFilters(true);
+    });
+    
+    // Hide all button
+    elements.hideAllBtn.addEventListener('click', () => {
+        setAllFilters(false);
+    });
+}
+
+/**
+ * Handle filter checkbox changes
+ */
+function handleFilterChange() {
+    applyFilters();
+    updateFilterCounts();
+}
+
+/**
+ * Apply current filter settings to the graph
+ */
+function applyFilters() {
+    if (!window.GraphState || !window.GraphState.data) return;
+    
+    // Get selected entity types
+    const selectedEntityTypes = Array.from(elements.entityTypeFilters.querySelectorAll('input:checked'))
+        .map(input => input.id.replace('entity-', ''));
+    
+    // Get selected relationship types
+    const selectedRelationshipTypes = Array.from(elements.relationshipTypeFilters.querySelectorAll('input:checked'))
+        .map(input => input.id.replace('rel-', '').replace(/-/g, ' '));
+    
+    // Filter nodes
+    GraphState.nodeElements.style('opacity', d => {
+        return selectedEntityTypes.includes(d.type) ? 1 : 0.1;
+    });
+    
+    // Filter links
+    GraphState.linkElements.style('opacity', d => {
+        return selectedRelationshipTypes.includes(d.predicate) ? 0.8 : 0.1;
+    });
+    
+    // Filter relationship labels
+    GraphState.relationshipLabelElements.style('opacity', d => {
+        return selectedRelationshipTypes.includes(d.predicate) ? 0.8 : 0.1;
+    });
+}
+
+/**
+ * Set all filters to show or hide
+ * @param {boolean} show - Whether to show all or hide all
+ */
+function setAllFilters(show) {
+    // Update checkboxes
+    const allCheckboxes = elements.filterControls.querySelectorAll('input[type="checkbox"]');
+    allCheckboxes.forEach(checkbox => {
+        checkbox.checked = show;
+    });
+    
+    // Update visual state
+    const allFilterBoxes = elements.filterControls.querySelectorAll('.filter-checkbox');
+    allFilterBoxes.forEach(box => {
+        box.classList.toggle('checked', show);
+    });
+    
+    // Apply filters
+    applyFilters();
+    updateFilterCounts();
+}
+
+/**
+ * Update filter count displays
+ */
+function updateFilterCounts() {
+    if (!window.GraphState || !window.GraphState.data) return;
+    
+    const totalNodes = GraphState.data.nodes.length;
+    const visibleNodes = GraphState.nodeElements.filter(d => d3.select(d).style('opacity') === '1').size();
+    
+    elements.totalCount.textContent = totalNodes;
+    elements.visibleCount.textContent = visibleNodes;
 }
 
 // Make utility functions available globally for debugging

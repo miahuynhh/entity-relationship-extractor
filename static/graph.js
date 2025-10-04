@@ -82,7 +82,7 @@ function processGraphData(relationships) {
             nodesMap.set(rel.subject_qid, {
                 id: rel.subject_qid,
                 label: rel.subject,
-                type: 'entity',
+                type: rel.subject_type || 'UNKNOWN',
                 inDegree: rel.subject_in_degree || 0,
                 outDegree: 0
             });
@@ -93,7 +93,7 @@ function processGraphData(relationships) {
             nodesMap.set(rel.object_qid, {
                 id: rel.object_qid,
                 label: rel.object,
-                type: 'entity',
+                type: rel.object_type || 'UNKNOWN',
                 inDegree: rel.object_in_degree || 0,
                 outDegree: 0
             });
@@ -175,10 +175,27 @@ function createGraph(data) {
         .selectAll('line')
         .data(links)
         .enter().append('line')
-        .attr('stroke', '#999')
-        .attr('stroke-opacity', 0.6)
-        .attr('stroke-width', 2)
-        .attr('marker-end', 'url(#arrowhead)');
+        .attr('stroke', '#666')
+        .attr('stroke-opacity', 0.8)
+        .attr('stroke-width', 3)
+        .attr('marker-end', 'url(#arrowhead-large)')
+        .style('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))');
+    
+    // Create relationship label elements
+    GraphState.relationshipLabelElements = GraphState.svg.append('g')
+        .attr('class', 'relationship-labels')
+        .selectAll('text')
+        .data(links)
+        .enter().append('text')
+        .text(d => d.predicate)
+        .attr('font-size', '10px')
+        .attr('font-family', 'Arial, sans-serif')
+        .attr('font-weight', '500')
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#444')
+        .attr('opacity', 0.9)
+        .style('pointer-events', 'none')
+        .style('text-shadow', '0 1px 2px rgba(255,255,255,0.8)');
     
     // Create node elements
     GraphState.nodeElements = GraphState.svg.append('g')
@@ -189,13 +206,14 @@ function createGraph(data) {
         .attr('r', d => calculateNodeSize(d))
         .attr('fill', d => getNodeColor(d))
         .attr('stroke', '#fff')
-        .attr('stroke-width', 2)
+        .attr('stroke-width', 3)
+        .style('filter', 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))')
         .call(d3.drag()
             .on('start', dragstarted)
             .on('drag', dragged)
             .on('end', dragended));
     
-    // Create label elements
+    // Create label elements (entity names)
     GraphState.labelElements = GraphState.svg.append('g')
         .attr('class', 'labels')
         .selectAll('text')
@@ -204,28 +222,70 @@ function createGraph(data) {
         .text(d => d.label)
         .attr('font-size', '12px')
         .attr('font-family', 'Arial, sans-serif')
+        .attr('font-weight', 'bold')
         .attr('text-anchor', 'middle')
-        .attr('dy', '0.35em')
+        .attr('dy', '-0.5em')
         .attr('fill', '#333');
     
+    // Create type label elements (entity types)
+    GraphState.typeLabelElements = GraphState.svg.append('g')
+        .attr('class', 'type-labels')
+        .selectAll('text')
+        .data(nodes)
+        .enter().append('text')
+        .text(d => d.type || 'UNKNOWN')
+        .attr('font-size', '10px')
+        .attr('font-family', 'Arial, sans-serif')
+        .attr('font-weight', 'normal')
+        .attr('text-anchor', 'middle')
+        .attr('dy', '1.2em')
+        .attr('fill', d => getTypeLabelColor(d.type))
+        .attr('opacity', 0.8);
+    
     // Add arrow markers for directed edges
-    GraphState.svg.append('defs').append('marker')
+    const defs = GraphState.svg.append('defs');
+    
+    // Create arrow marker
+    defs.append('marker')
         .attr('id', 'arrowhead')
         .attr('viewBox', '0 -5 10 10')
-        .attr('refX', 15)
+        .attr('refX', 20)
         .attr('refY', 0)
-        .attr('markerWidth', 6)
-        .attr('markerHeight', 6)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 8)
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M0,-5L10,0L0,5')
-        .attr('fill', '#999');
+        .attr('fill', '#666')
+        .attr('stroke', '#666')
+        .attr('stroke-width', 1);
+    
+    // Create larger arrow marker for better visibility
+    defs.append('marker')
+        .attr('id', 'arrowhead-large')
+        .attr('viewBox', '0 -7 14 14')
+        .attr('refX', 25)
+        .attr('refY', 0)
+        .attr('markerWidth', 10)
+        .attr('markerHeight', 10)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-7L14,0L0,7')
+        .attr('fill', '#444')
+        .attr('stroke', '#444')
+        .attr('stroke-width', 1.5);
     
     // Update positions on simulation tick
     GraphState.simulation.on('tick', updatePositions);
     
     // Add hover effects
     addHoverEffects();
+    
+    // Add edge hover effects
+    addEdgeHoverEffects();
+    
+    // Add legend
+    addLegend(nodes);
     
     console.log('Graph creation complete');
 }
@@ -258,9 +318,18 @@ function calculateNodeSize(node) {
  * @returns {string} Color code
  */
 function getNodeColor(node) {
-    // For now, use a default color scheme
-    // In the future, we can add entity type detection
-    return entityTypeColors['PERSON'] || '#667eea';
+    const entityType = node.type || 'UNKNOWN';
+    return entityTypeColors[entityType] || '#667eea';
+}
+
+/**
+ * Get type label color based on entity type
+ * @param {string} entityType - Entity type
+ * @returns {string} Color code
+ */
+function getTypeLabelColor(entityType) {
+    const type = entityType || 'UNKNOWN';
+    return entityTypeColors[type] || '#999';
 }
 
 /**
@@ -280,6 +349,19 @@ function updatePositions() {
     GraphState.labelElements
         .attr('x', d => d.x)
         .attr('y', d => d.y);
+    
+    GraphState.typeLabelElements
+        .attr('x', d => d.x)
+        .attr('y', d => d.y);
+    
+    // Update relationship labels to be positioned at the midpoint of edges
+    GraphState.relationshipLabelElements
+        .attr('x', d => (d.source.x + d.target.x) / 2)
+        .attr('y', d => (d.source.y + d.target.y) / 2)
+        .attr('transform', d => {
+            const angle = Math.atan2(d.target.y - d.source.y, d.target.x - d.source.x) * 180 / Math.PI;
+            return `rotate(${angle}, ${(d.source.x + d.target.x) / 2}, ${(d.source.y + d.target.y) / 2})`;
+        });
 }
 
 /**
@@ -308,6 +390,41 @@ function addHoverEffects() {
             
             // Hide tooltip
             hideTooltip();
+        });
+}
+
+/**
+ * Add hover effects to edges
+ */
+function addEdgeHoverEffects() {
+    GraphState.linkElements
+        .on('mouseover', function(event, d) {
+            // Highlight the edge
+            d3.select(this)
+                .attr('stroke-width', 5)
+                .attr('stroke', '#ff6b6b')
+                .style('filter', 'drop-shadow(0 2px 4px rgba(255,107,107,0.3))');
+            
+            // Highlight the relationship label
+            GraphState.relationshipLabelElements
+                .filter(link => link === d)
+                .attr('font-weight', 'bold')
+                .attr('font-size', '12px')
+                .attr('fill', '#ff6b6b');
+        })
+        .on('mouseout', function(event, d) {
+            // Reset edge appearance
+            d3.select(this)
+                .attr('stroke-width', 3)
+                .attr('stroke', '#666')
+                .style('filter', 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))');
+            
+            // Reset relationship label
+            GraphState.relationshipLabelElements
+                .filter(link => link === d)
+                .attr('font-weight', 'normal')
+                .attr('font-size', '10px')
+                .attr('fill', '#666');
         });
 }
 
@@ -391,6 +508,67 @@ function resetGraphView() {
             d3.zoomIdentity
         );
     }
+}
+
+/**
+ * Add legend showing entity types and colors
+ * @param {Array} nodes - Array of node data
+ */
+function addLegend(nodes) {
+    // Get unique entity types from nodes
+    const uniqueTypes = [...new Set(nodes.map(n => n.type))].filter(t => t && t !== 'UNKNOWN');
+    
+    if (uniqueTypes.length === 0) return;
+    
+    // Create legend group
+    const legend = GraphState.svg.append('g')
+        .attr('class', 'legend')
+        .attr('transform', `translate(20, 20)`);
+    
+    // Add legend background
+    const legendHeight = 25 + uniqueTypes.length * 20;
+    legend.append('rect')
+        .attr('x', -10)
+        .attr('y', -10)
+        .attr('width', 200)
+        .attr('height', legendHeight)
+        .attr('fill', 'rgba(255, 255, 255, 0.9)')
+        .attr('stroke', '#ddd')
+        .attr('stroke-width', 1)
+        .attr('rx', 5);
+    
+    // Add legend title
+    legend.append('text')
+        .attr('class', 'legend-title')
+        .text('Entity Types')
+        .attr('font-size', '14px')
+        .attr('font-weight', 'bold')
+        .attr('fill', '#333')
+        .attr('x', 5)
+        .attr('y', 5);
+    
+    // Add legend items
+    const legendItems = legend.selectAll('.legend-item')
+        .data(uniqueTypes)
+        .enter().append('g')
+        .attr('class', 'legend-item')
+        .attr('transform', (d, i) => `translate(5, ${20 + i * 20})`);
+    
+    // Add colored circles
+    legendItems.append('circle')
+        .attr('r', 8)
+        .attr('fill', d => entityTypeColors[d] || '#999')
+        .attr('stroke', '#fff')
+        .attr('stroke-width', 2);
+    
+    // Add type labels
+    legendItems.append('text')
+        .attr('x', 15)
+        .attr('y', 5)
+        .attr('font-size', '12px')
+        .attr('fill', '#333')
+        .attr('font-weight', '500')
+        .text(d => d);
 }
 
 /**

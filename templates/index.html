@@ -54,6 +54,30 @@ Charles Dillon 'Casey' Stengel was an American professional baseball player and 
                         </div>
                     </div>
                 </div>
+
+                <!-- Filter Controls -->
+                <div class="filter-controls" id="filterControls" style="display: none;">
+                    <h3>Filter by Type</h3>
+                    <div class="filter-section">
+                        <h4>Entity Types</h4>
+                        <div class="filter-checkboxes" id="entityTypeFilters">
+                            <!-- Entity type checkboxes will be populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="filter-section">
+                        <h4>Relationship Types</h4>
+                        <div class="filter-checkboxes" id="relationshipTypeFilters">
+                            <!-- Relationship type checkboxes will be populated dynamically -->
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button id="showAllBtn" class="filter-btn">Show All</button>
+                        <button id="hideAllBtn" class="filter-btn">Hide All</button>
+                    </div>
+                    <div class="filter-stats">
+                        <span id="visibleCount">0</span> of <span id="totalCount">0</span> entities visible
+                    </div>
+                </div>
             </div>
 
             <!-- Right Panel: Visualization -->

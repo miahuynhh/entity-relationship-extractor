@@ -1,0 +1,15 @@
+Most of my successes working with Cursor comes from providing the coding agent
+with sufficient context and telling it to wait for all the context before asking
+it to generate code. In my first working session for Assignment 1, I gave Cursor
+the spec, part-by-part, asking it to wait for all the context before generating
+code. Once I provided all the context, I ask it to implement the core functionalities
+step-by-step. This worked pretty well, until I found out it forgot about some
+previous context (this is further documented in failures.txt). To fix this, I asked 
+Cursor to refer to me as Matcha Master every time it generated a reply. If it forgot to call me
+Matcha Master, then I knew that it had forgotten some context. Using Git as version
+control also was a good way to work with the coding agent. I would make a commit 
+after every successful build of a feature - thus if Cursor made a mistake, it
+could easily be backtracked and fixed. My biggest success working with the agent
+comes from following the reading of Harper Reed's blog. I gave Cursor a prompt
+similar to the one on the blog for the planning step, asked it to save the plan in 
+prompt_plan.md, and made it develop step-by-step according to that plan.

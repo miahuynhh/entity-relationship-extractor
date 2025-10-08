@@ -1,0 +1,8 @@
+Cursor would forget that part of the task was to make an interactive web page.
+It built the backend, and through revision with me, it fine-tuned it to work pretty
+well, but the coding agent completely forgot about building the front end. Once I 
+remindeded it, it did a pretty decent job. It still failed to organize the Entity 
+Relationship Graph in a way that is easily readable for humans - the arrow tips are too
+big, the lines are too short, the text is sometimes upside-down. However, Cursor did make
+the graph interactive, so that the entities can be clicked on and dragged around to make
+the text on the lines more legible.

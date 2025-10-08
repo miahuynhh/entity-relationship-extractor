@@ -13,5 +13,5 @@ echo "Downloading spaCy English model..."
 python -m spacy download en_core_web_sm
 
 echo "Installation complete!"
-echo "You can now run the project using: ./generate.sh --input ./input.txt --output ./output.txt"
+echo "You can now run the project using: ./generate.sh --input ./input.txt"
 

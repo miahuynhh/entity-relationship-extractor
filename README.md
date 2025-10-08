@@ -37,8 +37,8 @@ chmod +x install.sh
 
 ### Command Line Interface (Core Functionality)
 ```bash
-# Basic usage - generates output.txt with relationship triplets
-./generate.sh --input ./input.txt --output ./output.txt
+# Basic usage - outputs relationship triplets to stdout (for evaluation)
+./generate.sh --input ./input.txt
 
 # With static graph visualization
 python src/main.py --input ./input.txt --output ./output.txt --visualize --viz-output ./graph.png
@@ -124,10 +124,10 @@ Output relationships:
 ### Verify Core Functionality
 ```bash
 # Test the main generate script (required by specification)
-./generate.sh --input ./input.txt --output ./output.txt
+./generate.sh --input ./input.txt
 
-# Verify output format matches specification
-cat output.txt
+# Verify output format matches specification (redirects to file)
+./generate.sh --input ./input.txt > output.txt
 ```
 
 ### Verify Web Application

@@ -16,11 +16,17 @@ def main():
     """Main function to process input and generate output."""
     parser = argparse.ArgumentParser(description='Extract entities and relationships from text')
     parser.add_argument('--input', required=True, help='Input text file path')
-    parser.add_argument('--output', required=True, help='Output file path')
+    parser.add_argument('--output', help='Output file path (optional if --stdout is used)')
+    parser.add_argument('--stdout', action='store_true', help='Output to stdout instead of file')
     parser.add_argument('--visualize', action='store_true', help='Create graph visualization')
     parser.add_argument('--viz-output', help='Path to save visualization image')
     
     args = parser.parse_args()
+    
+    # Validate arguments
+    if not args.stdout and not args.output:
+        print("Error: Either --output or --stdout must be specified")
+        sys.exit(1)
     
     # Read input file
     try:
@@ -34,15 +40,17 @@ def main():
         sys.exit(1)
     
     if not text:
-        print("Error: Input file is empty")
+        print("Error: Input file is empty", file=sys.stderr)
         sys.exit(1)
     
-    print(f"Processing text: {text}")
-    print("=" * 50)
+    # Only show debug output when not using stdout mode
+    if not args.stdout:
+        print(f"Processing text: {text}")
+        print("=" * 50)
     
     # Extract relationships using enhanced extractor
     extractor = EnhancedRelationshipExtractor()
-    relationships = extractor.extract_relationships(text)
+    relationships = extractor.extract_relationships(text, quiet=args.stdout)
     
     # Create visualization if requested
     if args.visualize:
@@ -53,16 +61,22 @@ def main():
     # Format output
     output_lines = extractor.format_output(relationships)
     
-    # Write output file
-    try:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            for line in output_lines:
-                f.write(line + '\n')
-        print(f"\nOutput written to: {args.output}")
-        print(f"Found {len(relationships)} relationships")
-    except Exception as e:
-        print(f"Error writing output file: {e}")
-        sys.exit(1)
+    # Output to stdout or file
+    if args.stdout:
+        # Output to stdout (file descriptor 1)
+        for line in output_lines:
+            print(line)
+    else:
+        # Write output file
+        try:
+            with open(args.output, 'w', encoding='utf-8') as f:
+                for line in output_lines:
+                    f.write(line + '\n')
+            print(f"\nOutput written to: {args.output}")
+            print(f"Found {len(relationships)} relationships")
+        except Exception as e:
+            print(f"Error writing output file: {e}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -24,12 +24,13 @@ class EnhancedRelationshipExtractor:
         self.wikidata_client = WikidataClient()
         self.graph_visualizer = GraphVisualizer()
     
-    def extract_relationships(self, text: str) -> List[Dict[str, Any]]:
+    def extract_relationships(self, text: str, quiet: bool = False) -> List[Dict[str, Any]]:
         """
         Extract entities and their relationships from text.
         
         Args:
             text (str): The input text to analyze
+            quiet (bool): If True, suppress debug output
             
         Returns:
             List[Dict[str, Any]]: List of relationship triplets with in-degree information
@@ -37,18 +38,22 @@ class EnhancedRelationshipExtractor:
         # Step 1: Extract entities from text
         entities = self.entity_extractor.extract_entities(text)
         if len(entities) < 2:
-            print("Need at least 2 entities to find relationships")
+            if not quiet:
+                print("Need at least 2 entities to find relationships")
             return []
         
-        print(f"Found {len(entities)} entities: {[e['text'] for e in entities]}")
+        if not quiet:
+            print(f"Found {len(entities)} entities: {[e['text'] for e in entities]}")
         
         # Step 2: Get Wikidata information for entities
-        processed_entities = self.wikidata_client.process_entities(entities)
+        processed_entities = self.wikidata_client.process_entities(entities, quiet=quiet)
         if len(processed_entities) < 2:
-            print("Need at least 2 entities with Wikidata information")
+            if not quiet:
+                print("Need at least 2 entities with Wikidata information")
             return []
         
-        print(f"Found Wikidata info for {len(processed_entities)} entities")
+        if not quiet:
+            print(f"Found Wikidata info for {len(processed_entities)} entities")
         
         # Step 3: Find relationships between all pairs of entities
         relationships = []
@@ -58,7 +63,8 @@ class EnhancedRelationshipExtractor:
                 subject = processed_entities[i]
                 object_entity = processed_entities[j]
                 
-                print(f"Checking relationships between '{subject['text']}' and '{object_entity['text']}'")
+                if not quiet:
+                    print(f"Checking relationships between '{subject['text']}' and '{object_entity['text']}'")
                 
                 # Check both directions: subject -> object and object -> subject
                 rels_forward = self.wikidata_client.get_relationships(
@@ -83,7 +89,8 @@ class EnhancedRelationshipExtractor:
                             'object_type': object_entity.get('label', 'UNKNOWN')
                         }
                         relationships.append(relationship)
-                        print(f"  Found: {relationship['subject']} --[{relationship['predicate']}]--> {relationship['object']}")
+                        if not quiet:
+                            print(f"  Found: {relationship['subject']} --[{relationship['predicate']}]--> {relationship['object']}")
                 
                 # Process backward relationships
                 if rels_backward:
@@ -100,10 +107,12 @@ class EnhancedRelationshipExtractor:
                             'object_type': subject.get('label', 'UNKNOWN')
                         }
                         relationships.append(relationship)
-                        print(f"  Found: {relationship['subject']} --[{relationship['predicate']}]--> {relationship['object']}")
+                        if not quiet:
+                            print(f"  Found: {relationship['subject']} --[{relationship['predicate']}]--> {relationship['object']}")
                 
                 if not rels_forward and not rels_backward:
-                    print(f"  No relationships found")
+                    if not quiet:
+                        print(f"  No relationships found")
         
         # Step 4: Add in-degree information for visualization
         relationships_with_degrees = self._add_in_degree_info(relationships, processed_entities)

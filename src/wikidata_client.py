@@ -186,12 +186,13 @@ class WikidataClient:
         
         return min(relationships, key=lambda x: len(x['predicate']))
     
-    def process_entities(self, entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def process_entities(self, entities: List[Dict[str, Any]], quiet: bool = False) -> List[Dict[str, Any]]:
         """
         Process a list of entities to get their Wikidata information.
         
         Args:
             entities (List[Dict[str, Any]]): List of entities from entity extraction
+            quiet (bool): If True, suppress debug output
             
         Returns:
             List[Dict[str, Any]]: List of entities with Wikidata information added
@@ -200,7 +201,8 @@ class WikidataClient:
         
         for entity in entities:
             entity_text = entity['text']
-            print(f"Processing entity: {entity_text}")
+            if not quiet:
+                print(f"Processing entity: {entity_text}")
             
             # Search for the entity in Wikidata
             qid = self.search_entity(entity_text)
@@ -211,11 +213,14 @@ class WikidataClient:
                     processed_entity['qid'] = qid
                     processed_entity['wikidata_label'] = label
                     processed_entities.append(processed_entity)
-                    print(f"  Found: {label} ({qid})")
+                    if not quiet:
+                        print(f"  Found: {label} ({qid})")
                 else:
-                    print(f"  Found QID {qid} but no label")
+                    if not quiet:
+                        print(f"  Found QID {qid} but no label")
             else:
-                print(f"  Not found in Wikidata")
+                if not quiet:
+                    print(f"  Not found in Wikidata")
             
             # Add small delay to be respectful to the API
             time.sleep(0.1)
